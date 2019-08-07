@@ -1,0 +1,5 @@
+colorlog
+tqdm
+prettytable
+requests
+jsonstreams
