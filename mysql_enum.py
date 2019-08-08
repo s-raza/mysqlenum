@@ -41,10 +41,16 @@ def construct_data(post_args, vuln_field):
     '''Construct the data that will be sent as a part of the GET or POST request to the target. One of these fields is specified as being vulnerable in the command line arguments, on which the SQL injection will be done.'''
     retval = {}
     
+    if ":" not in post_args:
+
+        print(clr.red("\n[!]") + "At least one parameter value must be set or if there is no parameter it should be left blank (E.g. -d 'param1:')\n   Exiting ...\n".format(vuln_field))
+        exit(0)
+    
     for i in post_args.split(","):
         
         param = i.split(":")
         retval[param[0]] = param[1]
+        
     
     if vuln_field not in retval:
         
