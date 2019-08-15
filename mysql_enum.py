@@ -169,7 +169,17 @@ def start(url=None,
         
     if enum_rows == "y":
         
-        enumerate_rows(target)
+        while True:
+        
+            enumerate_rows(target)
+                
+            again = input("Enumerate rows for another table? [y/n, default:n]: ")
+                
+            if again == "n":
+                
+                break
+            
+            
         
     
     
