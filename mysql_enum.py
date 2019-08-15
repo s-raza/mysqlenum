@@ -18,8 +18,10 @@
 # If not, see <https://www.gnu.org/licenses/>
 
 import argparse
-from prettytable import PrettyTable
+# from prettytable import PrettyTable
 from MySQLEnum import *
+from Formatting import *
+from builtins import input
 
 
 def show_banner():
@@ -58,80 +60,82 @@ def construct_data(post_args, vuln_field):
         exit(0)
     
     return retval
-    
-def print_db_info(db, format=None):
-    '''Print the DB information to the screen in a tabular format.'''
-    
-    if format == "table":
-    
-        info = PrettyTable(["{}: {}".format(clr.red("DB Name"),clr.white(db['info']['dbname'])),
-                            "{}: {}".format(clr.red("DB User"),clr.white(db['info']['username'])),
-                            "{}: {}".format(clr.red("DB Version"),clr.white(db['info']['version'])),
-                            "{}: {}".format(clr.red("Tables"),clr.white(db['info']['table_count']))
-                            ])
-                            
-        print(info)
-        
-    else:
-        print(("\n{db}: {db_info}\t{user}: {user_info}\t{version}: {version_info}\t{tables}: {tables_info}\n") \
-        .format(db=clr.red("DB Name"), db_info=clr.white(db['info']['dbname']),
-        user=clr.red("DB User"), user_info=clr.white(db['info']['username']),
-        version=clr.red("DB Version"), version_info=clr.white(db['info']['version']),
-        tables=clr.red("Tables"), tables_info=clr.white(db['info']['table_count'])))
 
-def print_table_info(DB, format=None):
-    '''Print the table information to the screen in a tabular format.'''
+def enumerate_rows(target):
     
-    if format == "table":
-        
-        
-        no = 0
-        for table,content in DB['tables'].items():
-            
-            no = no+1
-                            
-            head = PrettyTable(["{}".format(clr.white(str(no))),
-                            "{}: {}".format(clr.red("Table Name"),clr.white(table)),
-                            "{}: {}".format(clr.red("Columns"),clr.white(content['col_count'])),
-                            "{}: {}".format(clr.red("Rows"),clr.white(content['row_count']))
-                            ])
-            
-            body = PrettyTable(["No.","Columns"])
-            
-            body.align = "l"
-            
-            i = 0
-            
-            for col in content['cols']:
-            
-                i = i+1
-                
-                body.add_row([clr.red(str(i)),clr.yellow(col)])
-        
-        
-            print(head)
-            
-            print(body)
+    selected_table = select_table(target.DB)
     
+    print("\nTable selected: {}\n".format(clr.red(selected_table)))
     
-    else:
+    selected_col = select_col(target.DB, selected_table)
+    
+    selected_limit = select_row_limit(target.DB, selected_table)
+    
+    print("\nColumn selected: {}\n".format(clr.red(selected_col)))
+    
+    rows = target.get_rows(selected_col, selected_table, selected_limit)
+    
+    print(render_rows(rows,selected_col))
 
-        for table,content in DB['tables'].items():
-            
-            print("\n{table}: {table_info}\t{column}: {column_info}\t{rows}: {rows_info}" \
-            .format(table=clr.red("Table Name"),table_info=clr.white(table),
-            column=clr.red("Columns"),column_info=clr.white(content['col_count']),
-            rows=clr.red("Rows"),rows_info=clr.white(content['row_count'])))
-            
-            print(clr.yellow("COLUMNS:"))
-            
-            for col in content['cols']:
-            
-                print(clr.yellow("\t{}".format(col)))
+def select_row_limit(db, selected_table):
+    
+    total_rows = int(db['tables'][selected_table]['row_count'])
+    
+    while True:
+    
+        selected_limit = input("Number of rows to enumerate [Total: {}]: ".format(total_rows))
         
+        if selected_limit == '':
+            
+            selected_limit = total_rows
+            
+        else:
+            
+            selected_limit = int(selected_limit)
         
+        if selected_limit > 0 and selected_limit <= total_rows:
         
-         
+            break
+            
+    return selected_limit
+    
+
+def select_col(db, selected_table):
+    
+    cols = db['tables'][selected_table]["cols"]
+    
+    print(render_cols(cols))
+    
+    while True:
+    
+        col_index = int(input("Select Column to enumerate [{}-{}]: ".format("1",len(cols))))
+        
+        if col_index in list(range(1,len(cols)+1)):
+        
+            break
+            
+    selected_col = list(cols.keys())[int(col_index)-1]
+    
+    return selected_col
+    
+def select_table(db):
+    
+    print(render_tables(db))
+        
+    tables = db['tables']
+        
+    while True:
+    
+        table_index = int(input("Select Table [{}-{}]: ".format("1",len(tables))))
+        
+        if table_index in list(range(1,len(tables)+1)):
+        
+            break
+    
+    selected_table = list(tables.keys())[int(table_index)-1]
+    
+    return selected_table
+    
 
 def start(url=None,
             data=None,
@@ -146,7 +150,7 @@ def start(url=None,
     
     print(clr.red("\nENUMERATING DATABASE ...\n"))
    
-    enum = MYSQLENUM(target_url=url,
+    target = MYSQLENUM(target_url=url,
                         data=data,
                         vuln_field=vuln_field,
                         table_limit=table_limit,
@@ -154,12 +158,20 @@ def start(url=None,
                         request_type=request_type,
                         terminator=terminator
                         )
-                        
-    print_db_info(enum.DB, format="table")
-       
-    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(enum.DB['url']))))
+    target.enumerate()
     
-    print_table_info(enum.DB, format="table")
+    print_db_info(target.DB, format="table")
+       
+    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(target.DB['url']))))
+    
+    print_table_info(target.DB, format="table")
+    
+    enum_rows = input("Enumerate rows? [y/n, default:n]: ")
+        
+    if enum_rows == "y":
+        
+        enumerate_rows(target)
+        
     
     
     

