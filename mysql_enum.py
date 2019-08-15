@@ -18,7 +18,6 @@
 # If not, see <https://www.gnu.org/licenses/>
 
 import argparse
-# from prettytable import PrettyTable
 from MySQLEnum import *
 from Formatting import *
 from builtins import input

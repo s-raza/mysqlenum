@@ -87,8 +87,6 @@ class MYSQLENUM():
         
         self.DB = {}
         
-        # self.enumerate()
-        
 
     def get_fd(self):
         '''Get a file descripter to write the json output. The website name or the IP address of the target will be used in the filename.'''

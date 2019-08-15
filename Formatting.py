@@ -31,7 +31,6 @@ def render_cols(table):
     
     i = 0
     
-    # for col in table:
     for col,_ in table.items():
     
         i = i+1
