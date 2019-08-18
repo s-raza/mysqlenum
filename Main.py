@@ -137,7 +137,8 @@ def select_col(db, selected_table):
     '''Prompt for selecting the column in a table to enumerate it's rows'''
     
     cols = db['tables'][selected_table]['cols']
-    total_cols = int(db['tables'][selected_table]['col_count'])
+    
+    total_cols = len(db['tables'][selected_table]['cols'])
     
     print(render_cols(cols))
     
@@ -159,7 +160,8 @@ def select_table(db):
     print(render_tables(db))
         
     tables = db['tables']
-    total_tables = int(db['info']['table_count'])
+    
+    total_tables = len(db['tables'])
         
     while True:
     
