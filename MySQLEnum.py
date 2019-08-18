@@ -20,7 +20,6 @@
 
 
 import requests
-import os
 import datetime
 from Tools.ScreenColors import clr
 from Tools.LoggerLib import *
