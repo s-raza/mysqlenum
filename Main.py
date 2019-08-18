@@ -227,7 +227,7 @@ def start(*args,**kwargs):
             
             target.DB['params'] = args_init
             
-            show_results(target)
+            enumerate_rows(target)
             show_enum_rows_option(target)
             
                 
