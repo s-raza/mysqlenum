@@ -47,7 +47,7 @@ if __name__ == '__main__':
     
     parser.add_argument("-debug","--debug", help="Show debug messages : Use d=DEBUG, w=WARNING, i=INFO, e=ERROR, c=CRITICAL")
     
-    parser.add_argument("-u","--url", help="Full path to the vulnerable URL", required=True)
+    parser.add_argument("-u","--target_url", help="Full path to the vulnerable URL", required=True)
     
     parser.add_argument("-r","--request_type", help="Request type get=GET, post=POST", required='-f' not in sys.argv)
     
@@ -73,7 +73,7 @@ if __name__ == '__main__':
         
         
     
-    start(url=args.url,
+    start(target_url=args.target_url,
         data=args.data,
         vuln_field=args.vuln_field,
         table_limit=args.table_limit,

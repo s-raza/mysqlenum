@@ -46,6 +46,7 @@ def construct_data(post_args, vuln_field):
     return retval
 
 def show_enum_rows_option(target, keyinterrupt=False):
+    '''Prompt if the user wishes to enumerate rows'''
     
     msg = "Enumerate rows? [y/n, default:n]: "
     
@@ -72,6 +73,7 @@ def show_enum_rows_option(target, keyinterrupt=False):
         exit(0)
 
 def enumerate_rows(target):
+    '''Present the options and prompts for selecting tables, columns, number of rows to enumerate'''
 
     enumerated_rows = []
     
@@ -108,6 +110,7 @@ def enumerate_rows(target):
     
 
 def select_row_limit(db, selected_table):
+    '''Prompt for selecting the number of rows to enumerate for the selected table.column. Some tables may have thousands of rows. Enumerating limited number of rows is usually enough for most requirements.'''
     
     total_rows = int(db['tables'][selected_table]['row_count'])
     
@@ -131,6 +134,7 @@ def select_row_limit(db, selected_table):
     
 
 def select_col(db, selected_table):
+    '''Prompt for selecting the column in a table to enumerate it's rows'''
     
     cols = db['tables'][selected_table]['cols']
     total_cols = int(db['tables'][selected_table]['col_count'])
@@ -150,6 +154,7 @@ def select_col(db, selected_table):
     return selected_col
     
 def select_table(db):
+    '''Prompt for selecting the table in a database to enumerate it's rows'''
     
     print(render_tables(db))
         
@@ -169,47 +174,58 @@ def select_table(db):
     return selected_table
 
 def get_file_name(url):
+    '''Get the name of the json file that was saved for a particular url'''
     
     return './{}.json'.format(url.split('/')[2])
 
 def show_results(target):
+    '''Print enumeration results'''
     
     print_db_info(target.DB, format="table")
        
-    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(target.DB['params']['url']))))
+    print(clr.yellow("\nENUMERATED TABLES FOR: {}\n".format(clr.red(target.DB['params']['target_url']))))
     
     print_table_info(target.DB, format="table")
 
-def start(url=None,
-            data=None,
-            vuln_field=None,
-            table_limit=None,
-            debug=None,
-            terminator=None,
-            request_type=None,
-            file_read=None):
-            
+def set_params(kwargs, params_from_file):
+    '''Set commandline parameters provided with the -f switch. If a parameter is provided it is used, otherwise it is taken from the json file saved earlier.'''
+    
+    retval = {}
+    
+    for key,val in kwargs.items():
+        
+        if val is not None:
+            retval[key] = val
+        else:
+            retval[key] = params_from_file[key]
+    
+    return retval
+
+def start(*args,**kwargs):
+    '''Main program loop'''
+
+    file_read = kwargs['file_read']
+
+    args_init = dict(kwargs)
+    
+    del args_init['file_read']
     
     if file_read:
         
-        file_name = get_file_name(url)
+        file_name = get_file_name(kwargs['target_url'])
         
         if os.path.isfile(file_name):
             
             with open(file_name, 'r') as f:
                 db = json.load(f)
-                
-            target = MYSQLENUM(target_url=db['params']['url'],
-                        data=db['params']['data'],
-                        vuln_field=db['params']['vuln_field'],
-                        table_limit=db['params']['limit'],
-                        debug=db['params']['debug'],
-                        request_type=db['params']['request_type'],
-                        terminator=db['params']['terminator']
-                        )
+            
+            args_init = set_params(args_init, db['params'])
+            
+            target = MYSQLENUM(args_init)
 
             target.DB = db
-            target.DB['params'] = target.get_params()
+            
+            target.DB['params'] = args_init
             
             show_results(target)
             show_enum_rows_option(target)
@@ -223,18 +239,12 @@ def start(url=None,
     
     else:
     
-        data = construct_data(data, vuln_field)
+        kwargs['data'] = construct_data(kwargs['data'], kwargs['vuln_field'])
         
         print(clr.red("\nENUMERATING DATABASE ...\n"))
        
-        target = MYSQLENUM(target_url=url,
-                            data=data,
-                            vuln_field=vuln_field,
-                            table_limit=table_limit,
-                            debug=debug,
-                            request_type=request_type,
-                            terminator=terminator
-                            )
+        target = MYSQLENUM(kwargs)
+        
         target.enumerate()
         
         show_results(target)
