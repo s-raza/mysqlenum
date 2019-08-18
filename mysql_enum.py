@@ -64,11 +64,11 @@ def construct_data(post_args, vuln_field):
 
 def show_enum_rows_option(target, keyinterrupt=False):
     
-    msg = "1-Enumerate rows? [y/n, default:n]: "
+    msg = "Enumerate rows? [y/n, default:n]: "
     
     if keyinterrupt == True:
         
-        msg = "\n\n2-Enumerate rows for another table? [y/n, default:n]: "
+        msg = "\n\nEnumerate rows for another table? [y/n, default:n]: "
     
     
     enum_rows = input(msg)
@@ -79,7 +79,7 @@ def show_enum_rows_option(target, keyinterrupt=False):
         
             enumerate_rows(target)
                 
-            again = input("3-Enumerate rows for another table? [y/n, default:n]: ")
+            again = input("Enumerate rows for another table? [y/n, default:n]: ")
                 
             if again == "n":
                 
@@ -117,7 +117,7 @@ def enumerate_rows(target):
         
     except KeyboardInterrupt:
     
-        print("\n4-Row enumeration aborted, partial enumeration results for {}.{}:\n".format(clr.red(selected_table),clr.red(selected_col)))
+        print("\nRow enumeration aborted, partial enumeration results for {}.{}:\n".format(clr.red(selected_table),clr.red(selected_col)))
         
         print(render_rows(enumerated_rows,selected_col))
         
@@ -189,12 +189,6 @@ def select_table(db):
 
 def get_file_name(url):
     
-    file = url.split('/')[2]
-        
-    return open ('./{}.json'.format(file), 'w')
-
-def get_file_name(url):
-    
     return './{}.json'.format(url.split('/')[2])
 
 def show_results(target):
@@ -232,10 +226,8 @@ def start(url=None,
                         request_type=db['params']['request_type'],
                         terminator=db['params']['terminator']
                         )
-                        
-            target.DB['tables'] = db['tables']
-            target.DB['info'] = db['info']
-            target.DB['date'] = db['date']
+
+            target.DB = db
             target.DB['params'] = target.get_params()
             
             show_results(target)
@@ -248,24 +240,25 @@ def start(url=None,
             exit(1)
         
     
+    else:
     
-    data = construct_data(data, vuln_field)
-    
-    print(clr.red("\nENUMERATING DATABASE ...\n"))
-   
-    target = MYSQLENUM(target_url=url,
-                        data=data,
-                        vuln_field=vuln_field,
-                        table_limit=table_limit,
-                        debug=debug,
-                        request_type=request_type,
-                        terminator=terminator
-                        )
-    target.enumerate()
-    
-    show_results(target)
-    
-    show_enum_rows_option(target)
+        data = construct_data(data, vuln_field)
+        
+        print(clr.red("\nENUMERATING DATABASE ...\n"))
+       
+        target = MYSQLENUM(target_url=url,
+                            data=data,
+                            vuln_field=vuln_field,
+                            table_limit=table_limit,
+                            debug=debug,
+                            request_type=request_type,
+                            terminator=terminator
+                            )
+        target.enumerate()
+        
+        show_results(target)
+        
+        show_enum_rows_option(target)
     
     
 
