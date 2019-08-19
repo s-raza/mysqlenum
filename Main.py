@@ -78,8 +78,9 @@ def enumerate_rows(target):
     enumerated_rows = []
     
     selected_table = select_table(target.DB)
+    num_rows = target.DB['tables'][selected_table]['row_count']
     
-    print("\nTable selected: {}\n".format(clr.red(selected_table)))
+    print("\nTable selected: {} {}\n".format(clr.red(selected_table),clr.yellow("({} rows)".format(num_rows))))
     
     selected_col = select_col(target.DB, selected_table)
     
