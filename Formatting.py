@@ -69,7 +69,7 @@ def render_rows(col,col_name):
     
         i = i+1
         
-        rows.add_row([clr.red(str(i)),clr.yellow(row)])
+        rows.add_row([clr.red(str(i)),row])
     
     return rows
     

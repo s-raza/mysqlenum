@@ -156,7 +156,7 @@ def select_col(db, selected_table):
     return selected_col
     
 def select_table(db):
-    '''Prompt for selecting the table in a database to enumerate it's rows'''
+    '''Prompt for selecting a table to enumerate it's rows'''
     
     print(render_tables(db))
         
