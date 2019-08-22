@@ -45,46 +45,38 @@ def construct_data(post_args, vuln_field):
     
     return retval
 
-def show_enum_rows_option(target, keyinterrupt=False):
+def show_enum_rows_option(target):
     '''Prompt if the user wishes to enumerate rows'''
-    
-    msg = "Enumerate rows? [y/n, default:n]: "
-    
-    if keyinterrupt == True:
         
-        msg = "\n\nEnumerate rows for another table? [y/n, default:n]: "
+    while True:
     
-    
-    enum_rows = input(msg)
+        if enumerate_rows(target):
         
-    if enum_rows == "y":
-        
-        while True:
-        
-            enumerate_rows(target)
-                
-            again = input("Enumerate rows for another table? [y/n, default:n]: ")
+            msg = "Enumerate rows? [y/n, default:n]: "
+            
+            again = input(msg)
                 
             if again == "n":
                 
                 break
-    else:
-        
-        exit(0)
-
+                
+        else:
+            
+            break
+    
 def enumerate_rows(target):
     '''Present the options and prompts for selecting tables, columns, number of rows to enumerate'''
 
     enumerated_rows = []
     
-    selected_table = select_table(target.DB)
+    selected_table = select_table(target)
     num_rows = target.DB['tables'][selected_table]['row_count']
     
     print("\nTable selected: {} {}\n".format(clr.red(selected_table),clr.yellow("({} rows)".format(num_rows))))
     
-    selected_col = select_col(target.DB, selected_table)
+    selected_col = select_col(target, selected_table)
     
-    selected_limit = select_row_limit(target.DB, selected_table)
+    selected_limit = select_row_limit(target, selected_table, selected_col)
     
     print("\nColumn selected: {}\n".format(clr.red(selected_col)))
     
@@ -92,14 +84,28 @@ def enumerate_rows(target):
     
     try:
         
-        rows = target.generate_rows(selected_col, selected_table, selected_limit)
+        curr_rows = target.get_curr_enum_rows(selected_table,selected_col)
         
-        for row in rows:
+        if selected_limit == len(curr_rows):
+                
+            print(render_rows(curr_rows,selected_col))
+
+        else:
             
-            enumerated_rows.append(row)
+            if len(curr_rows) > 0:
+                    
+                enumerated_rows = enumerated_rows + curr_rows
+        
+            rows = target.generate_rows(selected_col, selected_table, selected_limit)
             
-        print(render_rows(enumerated_rows,selected_col))
+            for row in rows:
+                
+                enumerated_rows.append(row)
+                
+            print(render_rows(enumerated_rows,selected_col))
             
+                
+        return True
         
     except KeyboardInterrupt:
     
@@ -107,17 +113,21 @@ def enumerate_rows(target):
         
         print(render_rows(enumerated_rows,selected_col))
         
-        show_enum_rows_option(target, keyinterrupt=True)
+        if input("Continue enumerating rows for other tables? [y/n, default:n]: ") == 'y':
+            enumerate_rows(target)
+        else:
+            return False
     
 
-def select_row_limit(db, selected_table):
+def select_row_limit(target, selected_table, selected_col):
     '''Prompt for selecting the number of rows to enumerate for the selected table.column. Some tables may have thousands of rows. Enumerating limited number of rows is usually enough for most requirements.'''
     
-    total_rows = int(db['tables'][selected_table]['row_count'])
+    total_rows = int(target.DB['tables'][selected_table]['row_count'])
+    already_enumerated = len(target.get_curr_enum_rows(selected_table, selected_col))
     
     while True:
     
-        selected_limit = input("Number of rows to enumerate [Total: {}]: ".format(total_rows))
+        selected_limit = input("Number of rows to enumerate [Total: {}, Enumerated: {}]: ".format(total_rows, already_enumerated))
         
         if selected_limit == '':
             
@@ -134,12 +144,12 @@ def select_row_limit(db, selected_table):
     return selected_limit
     
 
-def select_col(db, selected_table):
+def select_col(target, selected_table):
     '''Prompt for selecting the column in a table to enumerate it's rows'''
     
-    cols = db['tables'][selected_table]['cols']
+    cols = target.DB['tables'][selected_table]['cols']
     
-    total_cols = len(db['tables'][selected_table]['cols'])
+    total_cols = len(target.DB['tables'][selected_table]['cols'])
     
     print(render_cols(cols))
     
@@ -155,14 +165,14 @@ def select_col(db, selected_table):
     
     return selected_col
     
-def select_table(db):
+def select_table(target):
     '''Prompt for selecting a table to enumerate it's rows'''
     
-    print(render_tables(db))
+    print(render_tables(target))
         
-    tables = db['tables']
+    tables = target.DB['tables']
     
-    total_tables = len(db['tables'])
+    total_tables = len(target.DB['tables'])
         
     while True:
     
@@ -221,7 +231,7 @@ def start(*args,**kwargs):
             
             with open(file_name, 'r') as f:
                 db = json.load(f)
-            
+
             args_init = set_params(args_init, db['params'])
             
             target = MYSQLENUM(args_init)
@@ -230,16 +240,17 @@ def start(*args,**kwargs):
             
             target.DB['params'] = args_init
             
-            enumerate_rows(target)
+            # enumerate_rows(target)
             show_enum_rows_option(target)
             
+            with open(file_name, 'w') as fp:
+                json.dump(target.DB, fp, indent=4)
                 
         else:
             
             print(clr.red("\n[!]") + "File '{}' not found for URL: {}\n   Exiting ...\n".format(file_name,url))
             exit(1)
-        
-    
+
     else:
     
         kwargs['data'] = construct_data(kwargs['data'], kwargs['vuln_field'])

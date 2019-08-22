@@ -73,7 +73,7 @@ def render_rows(col,col_name):
     
     return rows
     
-def render_tables(db):
+def render_tables(target):
     
     tables = PrettyTable(["No.","Tables"])
     
@@ -81,7 +81,7 @@ def render_tables(db):
     
     i = 0
     
-    for table,_ in db['tables'].items():
+    for table,_ in target.DB['tables'].items():
         
         i = i+1
         
