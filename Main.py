@@ -189,7 +189,9 @@ def select_table(target):
 def get_file_name(url):
     '''Get the name of the json file that was saved for a particular url'''
     
-    return './{}.json'.format(url.split('/')[2])
+    file = '-'.join(url.split('/')[2:])
+    
+    return './{}.json'.format(file)
 
 def show_results(target):
     '''Print enumeration results'''

@@ -183,7 +183,7 @@ class MYSQLENUM():
     def get_fd(self):
         '''Get a file descripter to write the json output. The website name or the IP address of the target will be used in the filename.'''
         
-        file = self.target_url.split('/')[2]
+        file = '-'.join(self.target_url.split('/')[2:])
         
         return open ('./{}.json'.format(file), 'w')
 
