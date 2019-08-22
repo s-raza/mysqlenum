@@ -223,10 +223,10 @@ def start(*args,**kwargs):
     
     del args_init['file_read']
     
+    file_name = get_file_name(kwargs['target_url'])
+    
     if file_read:
-        
-        file_name = get_file_name(kwargs['target_url'])
-        
+
         if os.path.isfile(file_name):
             
             with open(file_name, 'r') as f:
@@ -243,8 +243,7 @@ def start(*args,**kwargs):
             # enumerate_rows(target)
             show_enum_rows_option(target)
             
-            with open(file_name, 'w') as fp:
-                json.dump(target.DB, fp, indent=4)
+            
                 
         else:
             
@@ -265,4 +264,5 @@ def start(*args,**kwargs):
         
         show_enum_rows_option(target)
     
-    
+    with open(file_name, 'w') as fp:
+        json.dump(target.DB, fp, indent=4)
