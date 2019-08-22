@@ -104,6 +104,8 @@ def enumerate_rows(target):
                 
             print(render_rows(enumerated_rows,selected_col))
             
+        if len(target.long_rows) > 0:
+            print("\nLong rows present:\n {}\n".format(render_long_rows(target.long_rows)))
                 
         return True
         

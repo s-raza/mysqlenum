@@ -93,6 +93,25 @@ class MYSQLENUM():
         
         self.long_rows = []
 
+    def get_log_rows(self):
+        
+        ret_dict = {}
+
+        for row in self.long_rows:
+
+            if row[0] not in ret_dict:
+                
+                ret_dict[row[0]] = {}
+
+            if row[1] not in ret_dict[row[0]]:
+                
+                ret_dict[row[0]][row[1]] = []
+                
+            ret_dict[row[0]][row[1]].append(row[2])
+
+        return ret_dict
+            
+
     def get_curr_enum_rows(self, table_name, col_name):
         '''Get a list of currently enumerated row contents for a partiuclar table.column'''
         
@@ -403,7 +422,7 @@ class MYSQLENUM():
                 
                 row = row+" ({})".format(clr.red(row_len))
                 
-                self.long_rows.append((table_name,col_name,index_of_last))
+                self.long_rows.append((table_name,col_name,index_of_last,row_len))
 
             else:
                 

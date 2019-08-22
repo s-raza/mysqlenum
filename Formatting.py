@@ -72,7 +72,19 @@ def render_rows(col,col_name):
         rows.add_row([clr.red(str(i)),row])
     
     return rows
+
+def render_long_rows(dict):
     
+    long_rows = PrettyTable(["No.","Table","Column","Row Index","Row Length"])
+
+    long_rows.align = "l"
+
+    for i,row in enumerate(dict):
+        
+        long_rows.add_row([i+1,row[0],row[1],row[2],row[3]])
+
+    return long_rows
+
 def render_tables(target):
     
     tables = PrettyTable(["No.","Tables"])
