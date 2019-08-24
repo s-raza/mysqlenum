@@ -19,6 +19,14 @@
 
 from prettytable import PrettyTable
 from Tools.ScreenColors import clr
+from textwrap import wrap
+
+WRAP_WIDTH = 75
+
+def get_wrapped(row_obj, txt):
+    
+    pass
+
 
 
 def print_db_info(db, format=None):
@@ -40,6 +48,10 @@ def print_db_info(db, format=None):
         user=clr.red("DB User"), user_info=clr.white(db['info']['username']),
         version=clr.red("DB Version"), version_info=clr.white(db['info']['version']),
         tables=clr.red("Tables"), tables_info=clr.white(db['info']['table_count'])))
+
+def remove_rn(txt):
+    
+    return txt.replace('\r',' ').replace('\n',' ')
 
 def render_cols(table):
 
@@ -68,20 +80,37 @@ def render_rows(col,col_name):
     for row in col:
     
         i = i+1
-        
-        rows.add_row([clr.red(str(i)),row])
+
+        if len(row) > WRAP_WIDTH:
+            
+            lines = wrap(row, WRAP_WIDTH)
+
+            rows.add_row([clr.red(str(i)),remove_rn(lines[0])])
+
+            for line in lines[1:]:
+                
+                rows.add_row(['',remove_rn(line)])
+        else:
+
+            rows.add_row([clr.red(str(i)),remove_rn(row)])
+
     
     return rows
 
-def render_long_rows(dict):
+def render_long_rows(tables, table, col, long_row_list):
     
-    long_rows = PrettyTable(["No.","Table","Column","Row Index","Row Length"])
+    long_rows = PrettyTable(["No.","Content","Actual Length","Row Index"])
 
     long_rows.align = "l"
 
-    for i,row in enumerate(dict):
+    for num,i in enumerate(long_row_list):
         
-        long_rows.add_row([i+1,row[0],row[1],row[2],row[3]])
+        content = tables[table]['cols'][col][i][1]
+
+        actual_length = tables[table]['cols'][col][i][0]
+        
+        # long_rows.add_row([num+1, wrap(content, WRAP_WIDTH)[0], actual_length, i])
+        long_rows.add_row([num+1, remove_rn(content), actual_length, i])
 
     return long_rows
 

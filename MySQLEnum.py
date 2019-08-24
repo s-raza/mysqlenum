@@ -25,6 +25,7 @@ from Tools.ScreenColors import clr
 from Tools.LoggerLib import *
 from tqdm import trange, tqdm
 import jsonstreams
+from Formatting import remove_rn
 
 enum_logger = colorlog.getLogger('MYSQLENUM')
 
@@ -33,6 +34,8 @@ class MYSQLENUM():
     
     def __init__(self, kwargs={}):
         
+        self.kwargs = kwargs
+
         self.target_url = kwargs['target_url']
         self.data = kwargs['data']
         self.vuln_field = kwargs['vuln_field']
@@ -91,29 +94,59 @@ class MYSQLENUM():
         
         self.DB = {}
         
-        self.long_rows = []
+        self.long_rows = {}
 
-    def get_log_rows(self):
+    def populate_long_rows(self):
+        '''Populate the long_row dictionary with the long row information from the DB dictionary'''
         
-        ret_dict = {}
-
-        for row in self.long_rows:
-
-            if row[0] not in ret_dict:
-                
-                ret_dict[row[0]] = {}
-
-            if row[1] not in ret_dict[row[0]]:
-                
-                ret_dict[row[0]][row[1]] = []
-                
-            ret_dict[row[0]][row[1]].append(row[2])
-
-        return ret_dict
+        for table,info in self.DB['tables'].items():
             
+            for col,rows in info['cols'].items():
+
+                for index,row in enumerate(rows):
+
+                    if int(row[0]) > len(row[1]):
+ 
+                        if table not in self.long_rows:
+                            
+                            self.long_rows[table] = {}
+
+                        if col not in self.long_rows[table]:
+                             
+                             self.long_rows[table][col] = []
+                        
+                        self.long_rows[table][col].append(index)
+
+    def get_long_rows_for_table_col(self, table_name, col_name):
+        '''Get a list of long rows for a particular table_name.col_name'''
+
+        long_rows = []
+
+        if table_name not in self.long_rows:
+
+            return long_rows
+
+        if col_name not in self.long_rows[table_name]:
+
+            return long_rows
+
+        return self.long_rows[table_name][col_name]
+            
+    def set_long_row(self, table_name, col_name, row_index):
+        '''Insert a long row in the long_row dictionary'''
+
+        if table_name not in self.long_rows:
+            
+            self.long_rows[table_name] = {}
+
+        if col_name not in self.long_rows[table_name]:
+            
+            self.long_rows[table_name][col_name] = []
+
+        self.long_rows[table_name][col_name].append(row_index)
 
     def get_curr_enum_rows(self, table_name, col_name):
-        '''Get a list of currently enumerated row contents for a partiuclar table.column'''
+        '''Get a list of currently enumerated row contents for a partiuclar table_name.col_name'''
         
         rows = self.DB['tables'][table_name]['cols'][col_name]
         
@@ -153,7 +186,7 @@ class MYSQLENUM():
             
             row_part = self.get_partial_row_content(row, table, col, (buff*pos)+1, buff)
             
-            prog_bar.set_description("Retrieving partial row: {}".format(clr.red(row_part)))
+            prog_bar.set_description("Retrieving partial row: {}".format(clr.red(remove_rn(row_part))))
             
             yield row_part
         
@@ -414,7 +447,7 @@ class MYSQLENUM():
             
             row_len = self.get_row_len(str(i), table_name, col_name)
             
-            self.DB['tables'][table_name]['cols'][col_name].append((row_len,row))
+            self.DB['tables'][table_name]['cols'][col_name].append([row_len,row])
             
             index_of_last = len(self.DB['tables'][table_name]['cols'][col_name])-1
             
@@ -422,7 +455,7 @@ class MYSQLENUM():
                 
                 row = row+" ({})".format(clr.red(row_len))
                 
-                self.long_rows.append((table_name,col_name,index_of_last,row_len))
+                self.set_long_row(table_name,col_name,index_of_last)
 
             else:
                 

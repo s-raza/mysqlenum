@@ -104,9 +104,11 @@ def enumerate_rows(target):
                 
             print(render_rows(enumerated_rows,selected_col))
             
-        if len(target.long_rows) > 0:
-            print("\nLong rows present:\n {}\n".format(render_long_rows(target.long_rows)))
-                
+        if(len(target.get_long_rows_for_table_col(selected_table, selected_col)) > 0):
+
+            if input("Long rows present, enumerate them? [y/n, default:n]: ") in ['y','']:
+                enumerate_long_rows(target, selected_table, selected_col)            
+
         return True
         
     except KeyboardInterrupt:
@@ -119,7 +121,39 @@ def enumerate_rows(target):
             enumerate_rows(target)
         else:
             return False
+
+def select_long_row(target, table, col, long_row_list):
     
+    print(render_long_rows(target.DB['tables'], table,col, long_row_list))
+    
+    while True:
+    
+        long_row = int(input("Select the row to enumerate it's complete contents [{}-{}]: ".format("1",len(long_row_list))))
+        
+        if long_row > 0 and long_row <= len(long_row_list):
+        
+            break
+            
+    long_row = long_row_list[long_row-1]
+    
+    return long_row
+
+def enumerate_long_rows(target, table, col):
+       
+       long_row_list = target.get_long_rows_for_table_col(table,col)
+       
+       selected_long_row = select_long_row(target, table, col, long_row_list)
+
+       full_content = target.get_long_row_content(str(selected_long_row), table, col)
+
+       target.DB['tables'][table]['cols'][col][selected_long_row][0] = str(len(full_content))
+
+       target.DB['tables'][table]['cols'][col][selected_long_row][1] = full_content
+
+       target.long_rows[table][col].remove(selected_long_row)
+
+       print("\nContents for '{}.{}[{}]':\n{}\n".format(table, col, selected_long_row, full_content))
+
 
 def select_row_limit(target, selected_table, selected_col):
     '''Prompt for selecting the number of rows to enumerate for the selected table.column. Some tables may have thousands of rows. Enumerating limited number of rows is usually enough for most requirements.'''
@@ -243,6 +277,8 @@ def start(*args,**kwargs):
             target.DB = db
             
             target.DB['params'] = args_init
+
+            target.populate_long_rows()
             
             # enumerate_rows(target)
             show_enum_rows_option(target)
