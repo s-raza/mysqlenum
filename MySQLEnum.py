@@ -461,7 +461,7 @@ class MYSQLENUM():
                 
                 row = row+" ({})".format(row_len)
             
-            prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(row)))
+            prog_bar.set_description("Enumerated row data: '{}'".format(clr.red(remove_rn(row))))
             
             row_list.append(row)
             
