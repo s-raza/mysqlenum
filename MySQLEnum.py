@@ -191,7 +191,7 @@ class MYSQLENUM():
             yield row_part
         
     def get_long_row_content(self, row, table, col):
-        '''Some row contents retrieved are longer than the maximum length of the error message displayed by updatexml part of the mysql query. This function retrieves the entire contents part by part and then returned the complete row contents after joining them'''
+        '''Some row contents retrieved are longer than the maximum length of the error message displayed by updatexml part of the mysql query. This function retrieves the entire contents part by part and then returns the complete row contents after joining them'''
         
         complete_row = ""
         

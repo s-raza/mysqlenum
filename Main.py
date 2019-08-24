@@ -123,6 +123,7 @@ def enumerate_rows(target):
             return False
 
 def select_long_row(target, table, col, long_row_list):
+    '''Prompt for selecting the long row, to enumerate it's complete contents'''
     
     print(render_long_rows(target.DB['tables'], table,col, long_row_list))
     
@@ -139,7 +140,8 @@ def select_long_row(target, table, col, long_row_list):
     return long_row
 
 def enumerate_long_rows(target, table, col):
-       
+       '''Enumerate the complete contents of a selected long row'''
+
        long_row_list = target.get_long_rows_for_table_col(table,col)
        
        selected_long_row = select_long_row(target, table, col, long_row_list)
