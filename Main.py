@@ -68,17 +68,22 @@ def enumerate_rows(target):
     '''Present the options and prompts for selecting tables, columns, number of rows to enumerate'''
 
     enumerated_rows = []
+
+    user_input = UserInput(target=target)
+
+    table, col = user_input.get_input()
+
+    selected_table = table['selected']
+
+    num_rows = table['num_rows']
+
+    selected_col = col['selected']
+
+    selected_limit = col['limit']
     
-    selected_table = select_table(target)
-    num_rows = target.DB['tables'][selected_table]['row_count']
+    print("\nTable selected: {} {}".format(clr.red(selected_table),clr.yellow("({} rows)".format(num_rows))))
     
-    print("\nTable selected: {} {}\n".format(clr.red(selected_table),clr.yellow("({} rows)".format(num_rows))))
-    
-    selected_col = select_col(target, selected_table)
-    
-    selected_limit = select_row_limit(target, selected_table, selected_col)
-    
-    print("\nColumn selected: {}\n".format(clr.red(selected_col)))
+    print("Column selected: {}".format(clr.red(selected_col)))
     
     print("\nEnumerating rows for {}.{}\n".format(clr.red(selected_table), clr.red(selected_col)))
     
@@ -107,7 +112,8 @@ def enumerate_rows(target):
         if(len(target.get_long_rows_for_table_col(selected_table, selected_col)) > 0):
 
             if input("Long rows present, enumerate them? [y/n, default:n]: ") in ['y','']:
-                enumerate_long_rows(target, selected_table, selected_col)            
+                user_input.select_long_row()
+                enumerate_long_rows(target, user_input.long_row, selected_table, selected_col)            
 
         return True
         
@@ -122,22 +128,18 @@ def enumerate_rows(target):
         else:
             return False
 
-def enumerate_long_rows(target, table, col):
+def enumerate_long_rows(target, long_row, table, col):
        '''Enumerate the complete contents of a selected long row'''
 
-       long_row_list = target.get_long_rows_for_table_col(table,col)
-       
-       selected_long_row = select_long_row(target, table, col, long_row_list)
+       full_content = target.get_long_row_content(str(long_row), table, col)
 
-       full_content = target.get_long_row_content(str(selected_long_row), table, col)
+       target.DB['tables'][table]['cols'][col][long_row][0] = str(len(full_content))
 
-       target.DB['tables'][table]['cols'][col][selected_long_row][0] = str(len(full_content))
+       target.DB['tables'][table]['cols'][col][long_row][1] = full_content
 
-       target.DB['tables'][table]['cols'][col][selected_long_row][1] = full_content
+       target.long_rows[table][col].remove(long_row)
 
-       target.long_rows[table][col].remove(selected_long_row)
-
-       print("\nContents for '{}.{}[{}]':\n{}\n".format(table, col, selected_long_row, full_content))
+       print("\nContents for '{}.{}[{}]':\n{}\n".format(table, col, long_row, full_content))
 
 def get_file_name(url):
     '''Get the name of the json file that was saved for a particular url'''
