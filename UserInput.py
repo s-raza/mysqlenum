@@ -46,6 +46,17 @@ class UserInput():
 
         return funcs
 
+    def validate_range(self, to_validate, lower, upper):
+
+        if to_validate > lower and to_validate <= upper:
+
+            return True
+        
+        else:
+
+            return False
+
+
     def select_table(self):
         '''Prompt for selecting a table to enumerate it's rows'''
         
@@ -58,9 +69,9 @@ class UserInput():
         while True:
         
             table_index = int(input("Select Table [{}-{}]: ".format("1",total_tables)))
-            
-            if table_index > 0 and table_index <=  total_tables:
-            
+
+            if self.validate_range(table_index, 0, total_tables):
+
                 break
         
         selected_table = list(tables.keys())[int(table_index)-1]
@@ -87,9 +98,9 @@ class UserInput():
         while True:
         
             col_index = int(input("Select Column to enumerate [{}-{}]: ".format("1",total_cols)))
-            
-            if col_index > 0 and col_index <= total_cols:
-            
+
+            if self.validate_range(col_index, 0, total_cols):
+
                 break
                 
         selected_col = list(cols.keys())[int(col_index)-1]
@@ -126,9 +137,9 @@ class UserInput():
             else:
                 
                 selected_limit = int(selected_limit)
-            
-            if selected_limit > 0 and selected_limit <= total_rows:
-            
+
+            if self.validate_range(selected_limit, 0, total_rows):
+
                 break
         
         self.col['limit'] = selected_limit
@@ -156,8 +167,8 @@ class UserInput():
         
             long_row = int(input("Select the row to enumerate it's complete contents [{}-{}]: ".format("1",len(long_row_list))))
             
-            if long_row > 0 and long_row <= len(long_row_list):
-            
+            if self.validate_range(long_row, 0, len(long_row_list)):
+
                 break
                 
         long_row = long_row_list[long_row-1]
