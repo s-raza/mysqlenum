@@ -71,7 +71,7 @@ def enumerate_rows(target):
 
     user_input = UserInput(target=target)
 
-    table, col = user_input.get_input()
+    table, col = user_input.show_prompts()
 
     selected_table = table['selected']
 

@@ -29,8 +29,10 @@ class UserInput():
         self.table = {}
         self.col = {}
         self.long_row = None
+
+        self.invalid_inputs = [""," ","\n","\r","\r\n","\n\r"]
         
-    def get_input(self):
+    def show_prompts(self):
 
         self.select_table()
 
@@ -48,13 +50,23 @@ class UserInput():
 
     def validate_range(self, to_validate, lower, upper):
 
-        if to_validate > lower and to_validate <= upper:
+        if to_validate > lower and to_validate <= upper and to_validate not in self.invalid_inputs:
 
             return True
         
         else:
 
             return False
+
+    def get_input(self, prompt):
+
+        while True:
+            input = raw_input(prompt)
+
+            if input not in self.invalid_inputs:
+                break
+
+        return input
 
 
     def select_table(self):
@@ -68,7 +80,7 @@ class UserInput():
             
         while True:
         
-            table_index = int(input("Select Table [{}-{}]: ".format("1",total_tables)))
+            table_index = int(self.get_input("Select Table [{}-{}]: ".format("1",total_tables)))
 
             if self.validate_range(table_index, 0, total_tables):
 
@@ -97,7 +109,7 @@ class UserInput():
         
         while True:
         
-            col_index = int(input("Select Column to enumerate [{}-{}]: ".format("1",total_cols)))
+            col_index = int(self.get_input("Select Column to enumerate [{}-{}]: ".format("1",total_cols)))
 
             if self.validate_range(col_index, 0, total_cols):
 
@@ -128,7 +140,7 @@ class UserInput():
         
         while True:
         
-            selected_limit = input("Number of rows to enumerate [Total: {}, Enumerated: {}]: ".format(total_rows, already_enumerated))
+            selected_limit = self.get_input("Number of rows to enumerate [Total: {}, Enumerated: {}]: ".format(total_rows, already_enumerated))
             
             if selected_limit == '':
                 
@@ -165,7 +177,7 @@ class UserInput():
         
         while True:
         
-            long_row = int(input("Select the row to enumerate it's complete contents [{}-{}]: ".format("1",len(long_row_list))))
+            long_row = int(self.get_input("Select the row to enumerate it's complete contents [{}-{}]: ".format("1",len(long_row_list))))
             
             if self.validate_range(long_row, 0, len(long_row_list)):
 
