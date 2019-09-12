@@ -23,12 +23,6 @@ from textwrap import wrap
 
 WRAP_WIDTH = 75
 
-def get_wrapped(row_obj, txt):
-    
-    pass
-
-
-
 def print_db_info(db, format=None):
     '''Print the DB information to the screen in a tabular format.'''
     
@@ -50,13 +44,11 @@ def print_db_info(db, format=None):
         tables=clr.red("Tables"), tables_info=clr.white(db['info']['table_count'])))
 
 def remove_rn(txt):
-    
     return txt.replace('\r',' ').replace('\n',' ')
 
 def render_cols(table):
 
-    cols = PrettyTable(["No.","Columns"])
-          
+    cols = PrettyTable(["No.","Columns"])  
     cols.align = "l"
     
     i = 0
@@ -72,7 +64,6 @@ def render_cols(table):
 def render_rows(col,col_name):
 
     rows = PrettyTable(["No.",col_name])
-          
     rows.align = "l"
     
     i = 0
@@ -84,14 +75,11 @@ def render_rows(col,col_name):
         if len(row) > WRAP_WIDTH:
             
             lines = wrap(row, WRAP_WIDTH)
-
             rows.add_row([clr.red(str(i)),remove_rn(lines[0])])
 
             for line in lines[1:]:
-                
                 rows.add_row(['',remove_rn(line)])
         else:
-
             rows.add_row([clr.red(str(i)),remove_rn(row)])
 
     
@@ -100,15 +88,12 @@ def render_rows(col,col_name):
 def render_long_rows(tables, table, col, long_row_list):
     
     long_rows = PrettyTable(["No.","Content","Actual Length","Row Index"])
-
     long_rows.align = "l"
 
     for num,i in enumerate(long_row_list):
         
         content = tables[table]['cols'][col][i][1]
-
         actual_length = tables[table]['cols'][col][i][0]
-        
         # long_rows.add_row([num+1, wrap(content, WRAP_WIDTH)[0], actual_length, i])
         long_rows.add_row([num+1, remove_rn(content), actual_length, i])
 
@@ -117,7 +102,6 @@ def render_long_rows(tables, table, col, long_row_list):
 def render_tables(target):
     
     tables = PrettyTable(["No.","Tables"])
-    
     tables.align = "l"
     
     i = 0
@@ -125,7 +109,6 @@ def render_tables(target):
     for table,_ in target.DB['tables'].items():
         
         i = i+1
-        
         tables.add_row([clr.red(str(i)),clr.yellow(table)])
         
     return tables
@@ -134,13 +117,12 @@ def print_table_info(db, format=None):
     '''Print the table information to the screen in a tabular format.'''
     
     if format == "table":
-        
-        
+
         i = 0
+
         for table,content in db['tables'].items():
             
-            i = i+1
-                            
+            i = i+1            
             head = PrettyTable(["{}".format(clr.white(str(i))),
                             "{}: {}".format(clr.red("Table Name"),clr.white(table)),
                             "{}: {}".format(clr.red("Columns"),clr.white(content['col_count'])),
@@ -148,12 +130,8 @@ def print_table_info(db, format=None):
                             ])
         
             body = render_cols(content['cols'])
-            
             print(head)
-            
             print(body)
-    
-    
     else:
 
         for table,content in db['tables'].items():
@@ -166,5 +144,4 @@ def print_table_info(db, format=None):
             print(clr.yellow("COLUMNS:"))
             
             for col in content['cols']:
-            
                 print(clr.yellow("\t{}".format(col)))

@@ -25,19 +25,15 @@ class UserInput():
     def __init__(self, target=None):
         
         self.target = target
-
         self.table = {}
         self.col = {}
         self.long_row = None
-
         self.invalid_inputs = [""," ","\n","\r","\r\n","\n\r"]
         
     def show_prompts(self):
 
         self.select_table()
-
         self.select_col()
-
         self.select_row_limit()
 
         return [self.table, self.col]
@@ -51,11 +47,8 @@ class UserInput():
     def validate_range(self, to_validate, lower, upper):
 
         if to_validate > lower and to_validate <= upper and to_validate not in self.invalid_inputs:
-
             return True
-        
         else:
-
             return False
 
     def get_input(self, prompt):
@@ -65,7 +58,6 @@ class UserInput():
 
             if input not in self.invalid_inputs:
                 break
-
         return input
 
 
@@ -73,21 +65,16 @@ class UserInput():
         '''Prompt for selecting a table to enumerate it's rows'''
         
         print(render_tables(self.target))
-            
         tables = self.target.DB['tables']
-        
         total_tables = len(self.target.DB['tables'])
             
         while True:
-        
             table_index = int(self.get_input("Select Table [{}-{}]: ".format("1",total_tables)))
 
             if self.validate_range(table_index, 0, total_tables):
-
                 break
-        
+
         selected_table = list(tables.keys())[int(table_index)-1]
-        
         self.table['selected'] = selected_table
         self.table['num_rows'] = self.target.DB['tables'][selected_table]['row_count']
 
@@ -98,25 +85,19 @@ class UserInput():
 
         if self.table.get('selected') is None:
             self.select_table()
-        
-        table = self.table['selected']
 
+        table = self.table['selected']
         cols = self.target.DB['tables'][table]['cols']
-        
         total_cols = len(self.target.DB['tables'][table]['cols'])
-        
         print(render_cols(cols))
         
         while True:
-        
             col_index = int(self.get_input("Select Column to enumerate [{}-{}]: ".format("1",total_cols)))
 
             if self.validate_range(col_index, 0, total_cols):
-
                 break
                 
         selected_col = list(cols.keys())[int(col_index)-1]
-        
         self.col['selected'] = selected_col
 
         return selected_col
@@ -131,27 +112,20 @@ class UserInput():
             self.select_col()
 
         selected_table = self.table['selected']
-
         selected_col = self.col['selected']
-
         total_rows = int(self.target.DB['tables'][selected_table]['row_count'])
-
         already_enumerated = len(self.target.get_curr_enum_rows(selected_table, selected_col))
         
         while True:
-        
+
             selected_limit = self.get_input("Number of rows to enumerate [Total: {}, Enumerated: {}]: ".format(total_rows, already_enumerated))
             
             if selected_limit == '':
-                
                 selected_limit = total_rows
-                
             else:
-                
                 selected_limit = int(selected_limit)
 
             if self.validate_range(selected_limit, 0, total_rows):
-
                 break
         
         self.col['limit'] = selected_limit
@@ -168,11 +142,8 @@ class UserInput():
             self.select_col()
 
         table = self.table['selected']
-
         col = self.col['selected']
-
         long_row_list = self.target.get_long_rows_for_table_col(table,col)
-
         print(render_long_rows(self.target.DB['tables'], table, col, long_row_list))
         
         while True:
@@ -180,11 +151,9 @@ class UserInput():
             long_row = int(self.get_input("Select the row to enumerate it's complete contents [{}-{}]: ".format("1",len(long_row_list))))
             
             if self.validate_range(long_row, 0, len(long_row_list)):
-
                 break
                 
         long_row = long_row_list[long_row-1]
-
         self.long_row = long_row
         
         return long_row
