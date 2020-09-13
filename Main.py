@@ -49,7 +49,7 @@ def show_enum_rows_option(target):
         if enumerate_rows(target):
         
             msg = "Enumerate rows? [y/n, default:n]: "
-            again = raw_input(msg)
+            again = input(msg)
                 
             if again == "n":   
                 break   
@@ -89,7 +89,7 @@ def enumerate_rows(target):
             
         if(len(target.get_long_rows_for_table_col(selected_table, selected_col)) > 0):
 
-            if raw_input("Long rows present, enumerate them? [y/n, default:n]: ") in ['y','']:
+            if input("Long rows present, enumerate them? [y/n, default:n]: ") in ['y','']:
                 user_input.select_long_row()
                 enumerate_long_rows(target, user_input.long_row, selected_table, selected_col)            
         return True
@@ -99,7 +99,7 @@ def enumerate_rows(target):
         print("\nRow enumeration aborted, partial enumeration results for {}.{}:\n".format(clr.red(selected_table),clr.red(selected_col)))
         print(render_rows(enumerated_rows,selected_col))
         
-        if raw_input("Continue enumerating rows for other tables? [y/n, default:n]: ") == 'y':
+        if input("Continue enumerating rows for other tables? [y/n, default:n]: ") == 'y':
             enumerate_rows(target)
         else:
             return False

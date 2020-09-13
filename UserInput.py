@@ -54,11 +54,11 @@ class UserInput():
     def get_input(self, prompt):
 
         while True:
-            input = raw_input(prompt)
+            user_input = input(prompt)
 
-            if input not in self.invalid_inputs:
+            if user_input not in self.invalid_inputs:
                 break
-        return input
+        return user_input
 
 
     def select_table(self):
